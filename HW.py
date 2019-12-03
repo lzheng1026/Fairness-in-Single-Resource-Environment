@@ -38,6 +38,15 @@ class Job:
         self.service_time = service_time
         self.exit = None
 
+    def __str__(self):
+        return ("Arrival: {0}\tService Time:{1}\tExit Time:{2}".format(self.arrival, self.service_time, self.exit))
+
+
+# job size distributions: exponential, bounded pareto(low var and high var), same job size, hyperexponential
+# arrival process: poisson
+# policies: SRPT (PS)
+#           FCFS LCFS, SJF, LJF
+# 5000 runs of 50,000 jobs
 
 class Simulator:
     def simulateMM1(self, num_arrivals, trials, service_rate, arrival_rate):
@@ -61,6 +70,11 @@ class Simulator:
                 else:
                     time = job.arrival + job.service_time
                 job.exit = time
+
+            # for pickling purposes
+            # with open('jobs_fcfs_example.pkl', 'wb') as f:
+            #     pickle.dump(jobs, f)
+
             response_times.append(jobs[-1].exit - jobs[-1].arrival)
         print('M/M/1 Queue')
         print('Service Rate: {0}\tArrival Rate: {1}'.format(service_rate, arrival_rate))
@@ -121,14 +135,14 @@ class Simulator:
 def Main():
     simulator = Simulator()
     # 4.3
-    simulator.simulateMM1(2000, 200, 1, 0.5)
-    simulator.simulateMM1(2000, 200, 2, 1)
-    simulator.simulateMM1(2000, 200, 1, 0.7)
-    simulator.simulateMM1(2000, 200, 1, 0.9)
-
-    # 20.1
-    simulator.simulateMBP1(50000, 5000, 1000, 10 ** 10, 1.5)
-    simulator.simulateMBP1(50000, 5000, 1970, 10 ** 10, 2.9)
+    simulator.simulateMM1(1000000, 1, 1, 0.5)
+    # simulator.simulateMM1(2000, 200, 2, 1)
+    # simulator.simulateMM1(2000, 200, 1, 0.7)
+    # simulator.simulateMM1(2000, 200, 1, 0.9)
+    #
+    # # 20.1
+    # simulator.simulateMBP1(50000, 5000, 1000, 10 ** 10, 1.5)
+    # simulator.simulateMBP1(50000, 5000, 1970, 10 ** 10, 2.9)
 
 
 Main()
