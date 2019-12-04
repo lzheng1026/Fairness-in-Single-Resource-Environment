@@ -1,5 +1,5 @@
 import pickle
-from HW import Job
+from Simulator import Job
 '''
 Given a list of jobs, calculate the discrimination frequency
 '''
