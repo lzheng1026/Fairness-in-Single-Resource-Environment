@@ -2,6 +2,7 @@ import numpy as np
 import math
 import random
 import pickle
+import queue as Q
 
 
 class BoundedPareto:
@@ -55,36 +56,37 @@ class Simulator:
         service = Exponential(service_rate)
         t = 0
         jobs = []
-        for i in range(num_arrivals + 1):
+        for i in range(num_arrivals):
             t += arrival.generate() if i != 0 else 0
             jobs.append(Job(t, service.generate()))
 
         eval(policy)(jobs)
 
         # for pickling purposes
-        # with open('{0}_exponential.pkl'.format(policy), 'wb') as f:
-        #     pickle.dump(jobs, f)
+        with open('{0}_exponential.pkl'.format(policy), 'wb') as f:
+            pickle.dump(jobs, f)
 
     def simulateMBP1(self, num_arrivals, policy, k, p, alpha):
         arrival = BoundedPareto(k, p, alpha)
         t = 0
         jobs = []
-        arrivals = [arrival.generate() for i in range(num_arrivals + 1)]
+        arrivals = [arrival.generate() for i in range(num_arrivals)]
         arrival_rate = 1 / np.mean(arrivals)
 
         # utilization fixed at 0.8
         service_rate = arrival_rate / 0.8
         service = Exponential(service_rate)
 
-        for i in range(num_arrivals + 1):
+        for i in range(num_arrivals):
             t += arrivals[i] if i != 0 else 0
             jobs.append(Job(t, service.generate()))
 
         eval(policy)(jobs)
 
         # for pickling purposes
-        # with open('{0}_pareto_lowvar.pkl'.format(policy), 'wb') as f:
-        #     pickle.dump(jobs, f)
+        with open('{0}_pareto_lowvar.pkl'.format(policy), 'wb') as f:
+            pickle.dump(jobs, f)
+
 
 # policies
 
@@ -99,12 +101,63 @@ def FCFS(jobs):
             time = job.arrival + job.service_time
         job.exit = time
 
+
+def SRPT(jobs):
+    # remaining processing time, job, index in jobs, service start time
+    jobs_srpt = [[jobs[i].service_time, jobs[i], i, None] for i in range(len(jobs))]
+
+    time = 0
+    server = jobs_srpt[0]
+    server[3] = time
+    queue = Q.PriorityQueue()
+    i = 1
+    while queue.qsize() > 0 or i < len(jobs) or server:
+        # all the jobs came in already
+        if i >= len(jobs):
+            time += server[0]
+            jobs[server[2]].exit = time
+            if queue.qsize() > 0:
+                server = queue.get()
+            else:
+                server = None
+        # server finishes before another job comes in
+        elif time + server[0] <= jobs_srpt[i][1].arrival:
+            time += server[0]
+            jobs[server[2]].exit = time
+            if queue.qsize() > 0:
+                server = queue.get()
+                server[3] = time
+            else:
+                server = jobs_srpt[i]
+                time = server[1].arrival
+                server[3] = time
+                i += 1
+        # job comes in before server finishes
+        elif time + server[0] > jobs_srpt[i][1].arrival:
+            time = jobs_srpt[i][1].arrival
+            server[0] -= time - server[3]
+            server[3] = time
+            # cur job has less remaining processing time
+            if server[0] <= jobs_srpt[i][0]:
+                queue.put(jobs_srpt[i])
+            # new job has less remaining processing time
+            else:
+                server[3] = None
+                queue.put(server)
+                server = jobs_srpt[i]
+                server[3] = time
+            i += 1
+
 def Main():
     simulator = Simulator()
 
-    simulator.simulateMM1(1000000, 'FCFS', 1, 0.8)
-    simulator.simulateMBP1(1000000, 'FCFS', 1000, 10 ** 10, 1.5)
-    simulator.simulateMBP1(1000000, 'FCFS', 1970, 10 ** 10, 2.9)
+    # simulator.simulateMM1(1000000, 'FCFS', 1, 0.8)
+    # simulator.simulateMBP1(1000000, 'FCFS', 1000, 10 ** 10, 1.5) # high var
+    # simulator.simulateMBP1(1000000, 'FCFS', 1970, 10 ** 10, 2.9) # low var
+
+    #simulator.simulateMM1(1000000, 'SRPT', 1, 0.8)
+    #simulator.simulateMBP1(1000000, 'SRPT', 1000, 10 ** 10, 1.5) # high var
+    #simulator.simulateMBP1(1000000, 'SRPT', 1970, 10 ** 10, 2.9) # low var
 
 
 Main()
