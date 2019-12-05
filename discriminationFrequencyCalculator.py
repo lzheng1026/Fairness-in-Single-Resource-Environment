@@ -30,11 +30,13 @@ for job_num in range(throwout, length):
 
     # calculate n - the number of jobs that came after it that ended before it
     for job_num_after in range(job_num, length):
+        if end_time < data[job_num_after].arrival:
+            break
         if data[job_num_after].exit < end_time:
             n+=1
 
     # calculate m - the number of jobs bigger than it that ends before it
-    for job_num_before in range(throwout, job_num):
+    for job_num_before in range(job_num, length):
         if data[job_num_before].service_time > job_size:
             m+=1
 

@@ -38,6 +38,8 @@ class Job:
         self.arrival = arrival
         self.service_time = service_time
         self.exit = None
+        # proportional discrimination frequency measure
+        self.m = 0
 
     def __str__(self):
         return ("Arrival: {0}\tService Time:{1}\tExit Time:{2}".format(self.arrival, self.service_time, self.exit))
@@ -82,9 +84,9 @@ class Simulator:
             jobs.append(Job(t, service.generate()))
 
         eval(policy)(jobs)
-
         # for pickling purposes
-        with open('{0}_pareto_lowvar.pkl'.format(policy), 'wb') as f:
+        filename = '{0}_pareto_lowvar.pkl'.format(policy) if alpha == 2.9 else '{0}_pareto_highvar.pkl'.format(policy)
+        with open(filename, 'wb') as f:
             pickle.dump(jobs, f)
 
 
@@ -100,6 +102,18 @@ def FCFS(jobs):
         else:
             time = job.arrival + job.service_time
         job.exit = time
+
+    for i, job in enumerate(jobs):
+        j = i - 1
+        while j >= 0:
+            # job j was in system when job i arrived
+            if jobs[j].exit > job.arrival:
+                # job j has a greater service time (and remaining processing time) than job i
+                if jobs[j].service_time > job.service_time and jobs[j].exit - job.arrival > job.service_time:
+                    job.m += 1
+            else:
+                break
+            j -= 1
 
 
 def SRPT(jobs):
@@ -136,28 +150,28 @@ def SRPT(jobs):
         elif time + server[0] > jobs_srpt[i][1].arrival:
             time = jobs_srpt[i][1].arrival
             server[0] -= time - server[3]
-            server[3] = time
             # cur job has less remaining processing time
             if server[0] <= jobs_srpt[i][0]:
                 queue.put(jobs_srpt[i])
+                server[3] = time
             # new job has less remaining processing time
             else:
-                server[3] = None
                 queue.put(server)
                 server = jobs_srpt[i]
                 server[3] = time
             i += 1
 
+
 def Main():
     simulator = Simulator()
 
-    # simulator.simulateMM1(1000000, 'FCFS', 1, 0.8)
-    # simulator.simulateMBP1(1000000, 'FCFS', 1000, 10 ** 10, 1.5) # high var
-    # simulator.simulateMBP1(1000000, 'FCFS', 1970, 10 ** 10, 2.9) # low var
+    simulator.simulateMM1(1000000, 'FCFS', 1, 0.8)
+    simulator.simulateMBP1(1000000, 'FCFS', 1000, 10 ** 10, 1.5) # high var
+    simulator.simulateMBP1(1000000, 'FCFS', 1970, 10 ** 10, 2.9) # low var
 
-    #simulator.simulateMM1(1000000, 'SRPT', 1, 0.8)
-    #simulator.simulateMBP1(1000000, 'SRPT', 1000, 10 ** 10, 1.5) # high var
-    #simulator.simulateMBP1(1000000, 'SRPT', 1970, 10 ** 10, 2.9) # low var
+    simulator.simulateMM1(1000000, 'SRPT', 1, 0.8)
+    simulator.simulateMBP1(1000000, 'SRPT', 1000, 10 ** 10, 1.5) # high var
+    simulator.simulateMBP1(1000000, 'SRPT', 1970, 10 ** 10, 2.9) # low var
 
 
 Main()
