@@ -40,6 +40,8 @@ class Job:
         self.exit = None
         # proportional discrimination frequency measure
         self.m = 0
+        self.n = None
+        self.disfreq = None
 
     def __str__(self):
         return ("Arrival: {0}\tService Time:{1}\tExit Time:{2}".format(self.arrival, self.service_time, self.exit))
