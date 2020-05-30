@@ -2,7 +2,7 @@
 
 This repository is the simulation component of the literature review project for fairness in single resource environments. This project is part of Analytical Performance Modeling (Fall 2020 COSC-450) taught by Professor Kristen Gardner at Amherst College. 
 
-See more details abotu the project in /docs.
+See literature review in /docs.
 
 ## Simulation
 
